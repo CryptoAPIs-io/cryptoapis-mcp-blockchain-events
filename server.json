@@ -1,0 +1,29 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.CryptoAPIs-io/mcp-blockchain-events",
+  "description": "MCP server for subscribing to and managing on-chain event webhooks via Crypto APIs",
+  "repository": {
+    "url": "https://github.com/CryptoAPIs-io/cryptoapis-mcp-blockchain-events",
+    "source": "github"
+  },
+  "version": "0.2.2",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@cryptoapis-io/mcp-blockchain-events",
+      "version": "0.2.2",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "description": "Crypto APIs API key",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true,
+          "name": "CRYPTOAPIS_API_KEY"
+        }
+      ]
+    }
+  ]
+}
