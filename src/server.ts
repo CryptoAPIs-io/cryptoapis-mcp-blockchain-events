@@ -3,8 +3,10 @@ import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { loadSharedConfig, CryptoApisHttpClient, formatCreditsForDescription, runWithApiKey } from "@cryptoapis-io/mcp-shared";
+import { CryptoApisHttpClient, formatCreditsForDescription, loadSharedConfig, McpLogger, runWithApiKey } from "@cryptoapis-io/mcp-shared";
 import { tools } from "./tools/index.js";
+import { registerResources } from "./resources/index.js";
+import { registerPrompts } from "./prompts/index.js";
 
 const CRYPTOAPIS_SERVER_INFO = {
     name: "cryptoapis-blockchain-events",
@@ -19,12 +21,29 @@ const CRYPTOAPIS_SERVER_INFO = {
 
 function buildServer(client: CryptoApisHttpClient) {
     const server = new McpServer(CRYPTOAPIS_SERVER_INFO);
+    const logger = new McpLogger((params) => server.sendLoggingMessage(params), CRYPTOAPIS_SERVER_INFO.name);
 
     for (const t of tools) {
-        const description = t.credits != null ? `${t.description}\n\n${formatCreditsForDescription(t.credits)}` : t.description;
-        server.registerTool(t.name, { description, inputSchema: t.inputSchema }, t.handler(client));
+        const description =
+            t.credits != null ? `${t.description}\n\n${formatCreditsForDescription(t.credits)}` : t.description;
+        server.registerTool(t.name, { description, inputSchema: t.inputSchema }, (input: Record<string, unknown>) => {
+            logger.logDebug({ tool: t.name, event: "tool_call", input });
+            return t.handler(client, logger)(input as never).catch((err: unknown) => {
+                logger.logError(err instanceof Error ? err.message : String(err), {
+                    tool: t.name,
+                    action: input.action,
+                    blockchain: input.blockchain,
+                    network: input.network,
+                });
+                throw err;
+            });
+        });
     }
-    return server;
+
+    registerResources(server);
+    registerPrompts(server);
+
+    return { server, logger };
 }
 
 export type StartOptions =
@@ -35,11 +54,11 @@ export async function startBlockchainEventsServer(opts: StartOptions) {
     const isHttp = opts.transport === "http";
     const cfg = loadSharedConfig({ apiKey: opts.apiKey, allowMissingApiKey: isHttp });
     const client = new CryptoApisHttpClient(cfg);
-    const server = buildServer(client);
+    const { server, logger } = buildServer(client);
 
     if (opts.transport === "stdio") {
         await server.connect(new StdioServerTransport());
-        console.error("cryptoapis-blockchain-events MCP running (stdio)");
+        logger.logInfo("cryptoapis-blockchain-events MCP running (stdio)");
         return;
     }
 
@@ -61,11 +80,11 @@ export async function startBlockchainEventsServer(opts: StartOptions) {
     });
     app.get("/health", (_req: express.Request, res: express.Response) => res.status(200).json({ ok: true }));
     app.listen(port, host, () => {
-        console.error(`cryptoapis-blockchain-events MCP running (http) at http://${host}:${port}${path}`);
+        logger.logInfo(`cryptoapis-blockchain-events MCP running (http) at http://${host}:${port}${path}`);
         if (cfg.apiKey) {
-            console.error("API key: provided at startup — x-api-key request headers will be ignored");
+            logger.logInfo("API key: provided at startup — x-api-key request headers will be ignored");
         } else {
-            console.error("API key: not provided — each request must include x-api-key header");
+            logger.logInfo("API key: not provided — each request must include x-api-key header");
         }
     });
 }

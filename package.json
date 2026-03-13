@@ -1,6 +1,6 @@
 {
   "name": "@cryptoapis-io/mcp-blockchain-events",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "MCP server for subscribing to and managing on-chain event webhooks via Crypto APIs",
   "license": "MIT",
   "author": "Crypto APIs, Inc.",

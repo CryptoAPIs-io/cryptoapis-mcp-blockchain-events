@@ -1,4 +1,4 @@
-import type { CryptoApisHttpClient, RequestResult, DangerousActionMap } from "@cryptoapis-io/mcp-shared";
+import type { CryptoApisHttpClient, RequestResult, DangerousActionMap, McpLogger } from "@cryptoapis-io/mcp-shared";
 import { requiresConfirmation, buildConfirmationPreview, formatDangerousActionsWarning } from "@cryptoapis-io/mcp-shared";
 import type { McpToolDef } from "../types.js";
 import { BlockchainEventsManageToolSchema, type BlockchainEventsManageToolInput } from "./schema.js";
@@ -40,7 +40,7 @@ Actions:
         "activate-subscription": activateCredits,
     },
     inputSchema: BlockchainEventsManageToolSchema,
-    handler: (client: CryptoApisHttpClient) => async (input: BlockchainEventsManageToolInput) => {
+    handler: (client: CryptoApisHttpClient, logger: McpLogger) => async (input: BlockchainEventsManageToolInput) => {
         const dangerousAction = await requiresConfirmation(input.action, DANGEROUS_ACTIONS, input.confirmationToken);
         if (dangerousAction) {
             return await buildConfirmationPreview(input.action, dangerousAction, ACTION_CREDITS[input.action]);
@@ -61,7 +61,19 @@ Actions:
             case "activate-subscription":
                 result = await api.activateSubscription(client, { ...base, referenceId: input.referenceId! });
                 break;
+            default:
+                throw new Error(`Unknown action: ${(input as any).action}`);
         }
+        logger.logInfo({
+            tool: "blockchain_events_manage",
+            action: input.action,
+            blockchain: input.blockchain,
+            network: input.network,
+            creditsConsumed: result.creditsConsumed,
+            creditsAvailable: result.creditsAvailable,
+            responseTime: result.responseTime,
+            throughputUsage: result.throughputUsage,
+        });
         return {
             content: [
                 {

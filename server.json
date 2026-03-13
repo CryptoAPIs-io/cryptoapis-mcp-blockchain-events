@@ -6,12 +6,12 @@
     "url": "https://github.com/CryptoAPIs-io/cryptoapis-mcp-blockchain-events",
     "source": "github"
   },
-  "version": "0.2.3",
+  "version": "0.3.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@cryptoapis-io/mcp-blockchain-events",
-      "version": "0.2.3",
+      "version": "0.3.0",
       "transport": {
         "type": "stdio"
       },

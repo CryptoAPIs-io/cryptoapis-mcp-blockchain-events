@@ -1,4 +1,4 @@
-import type { CryptoApisHttpClient, RequestResult, DangerousActionMap } from "@cryptoapis-io/mcp-shared";
+import type { CryptoApisHttpClient, RequestResult, DangerousActionMap, McpLogger } from "@cryptoapis-io/mcp-shared";
 import { requiresConfirmation, buildConfirmationPreview, formatDangerousActionsWarning } from "@cryptoapis-io/mcp-shared";
 import type { McpToolDef } from "../types.js";
 import { BlockchainEventsCreateToolSchema, type BlockchainEventsCreateToolInput } from "./schema.js";
@@ -19,7 +19,7 @@ export const blockchainEventsCreateTool: McpToolDef<typeof BlockchainEventsCreat
 Event types include: UNCONFIRMED_COINS_TRANSACTION, CONFIRMED_COINS_TRANSACTION, UNCONFIRMED_TOKENS_TRANSACTION, CONFIRMED_TOKENS_TRANSACTION, NEW_BLOCK, ADDRESS_COINS_TRANSACTION_CONFIRMED, ADDRESS_TOKENS_TRANSACTION_CONFIRMED, and more. Some events require an address or transactionId parameter.${formatDangerousActionsWarning(DANGEROUS_ACTIONS)}`,
     credits: createCredits,
     inputSchema: BlockchainEventsCreateToolSchema,
-    handler: (client: CryptoApisHttpClient) => async (input: BlockchainEventsCreateToolInput) => {
+    handler: (client: CryptoApisHttpClient, logger: McpLogger) => async (input: BlockchainEventsCreateToolInput) => {
         const dangerousAction = await requiresConfirmation("create", DANGEROUS_ACTIONS, input.confirmationToken);
         if (dangerousAction) {
             return await buildConfirmationPreview("create", dangerousAction, createCredits);
@@ -34,6 +34,16 @@ Event types include: UNCONFIRMED_COINS_TRANSACTION, CONFIRMED_COINS_TRANSACTION,
             address: input.address,
             transactionId: input.transactionId,
             context: input.context,
+        });
+        logger.logInfo({
+            tool: "blockchain_events_create",
+            action: "create",
+            blockchain: input.blockchain,
+            network: input.network,
+            creditsConsumed: result.creditsConsumed,
+            creditsAvailable: result.creditsAvailable,
+            responseTime: result.responseTime,
+            throughputUsage: result.throughputUsage,
         });
         return {
             content: [
