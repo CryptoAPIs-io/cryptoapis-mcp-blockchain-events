@@ -32,7 +32,7 @@
     "cryptoapis-mcp-blockchain-events": "dist/cli.js"
   },
   "dependencies": {
-    "@cryptoapis-io/mcp-shared": "workspace:*",
+    "@cryptoapis-io/mcp-shared": "^0.3.0",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "express": "^4.22.1",
     "zod": "^3.25.0"
@@ -46,6 +46,8 @@
     "clean": "rimraf dist"
   },
   "devDependencies": {
-    "@types/express": "^5.0.6"
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.0.3",
+    "typescript": "^5.5.4"
   }
 }
