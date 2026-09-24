@@ -1,3 +1,4 @@
+import { parseHttpCliOptions } from "@cryptoapis-io/mcp-shared";
 import { startBlockchainEventsServer } from "./server.js";
 
 function getArg(name: string): string | undefined {
@@ -12,14 +13,11 @@ async function main() {
         await startBlockchainEventsServer({ transport: "stdio", apiKey });
         return;
     }
-    await startBlockchainEventsServer({
-        transport: "http",
-        host: getArg("host") ?? "0.0.0.0",
-        port: Number(getArg("port") ?? "3000"),
-        path: getArg("path") ?? "/mcp",
-        stateless: process.argv.includes("--stateless"),
-        apiKey,
-    });
+    // --host (default 127.0.0.1), --port, --path, --stateless, --auth-token / MCP_AUTH_TOKEN, --allowed-hosts
+    await startBlockchainEventsServer({ transport: "http", apiKey, ...parseHttpCliOptions() });
 }
 
-main().catch((err) => { console.error(err); process.exit(1); });
+main().catch((err) => {
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
+});

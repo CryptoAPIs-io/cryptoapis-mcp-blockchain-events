@@ -1,62 +1,41 @@
-import {
-    BLOCKCHAIN_NETWORKS,
-    EVM_BLOCKCHAINS,
-    UTXO_BLOCKCHAINS,
-} from "@cryptoapis-io/mcp-shared";
 import type { SupportedChainsResource } from "@cryptoapis-io/mcp-shared";
+import { EVENT_TYPE_BLOCKCHAINS, EVENT_TYPE_NETWORKS } from "../tools/create/schema.js";
 
 /**
- * All blockchains supported by blockchain-events (both EVM and UTXO).
- * The create-subscription API accepts any blockchain/network from BLOCKCHAIN_NETWORKS.
+ * The 8 event types blockchain_events_create actually supports, each its own
+ * dedicated endpoint with its own blockchain/network support (see
+ * EVENT_TYPE_BLOCKCHAINS/EVENT_TYPE_NETWORKS in tools/create/schema.ts).
  */
+export const EVENT_TYPES = Object.keys(EVENT_TYPE_BLOCKCHAINS);
 
-const evmBlockchains = EVM_BLOCKCHAINS as readonly string[];
-const utxoBlockchains = UTXO_BLOCKCHAINS as readonly string[];
+const allBlockchains = Array.from(new Set(Object.values(EVENT_TYPE_BLOCKCHAINS).flat())).sort();
 
-const evmNetworks: Record<string, readonly string[]> = {};
-for (const bc of evmBlockchains) {
-    evmNetworks[bc] = BLOCKCHAIN_NETWORKS[bc as keyof typeof BLOCKCHAIN_NETWORKS];
+const networksByBlockchain: Record<string, readonly string[]> = {};
+for (const [eventType, blockchains] of Object.entries(EVENT_TYPE_BLOCKCHAINS)) {
+    const networks = EVENT_TYPE_NETWORKS[eventType] ?? [];
+    for (const bc of blockchains) {
+        const existing = new Set(networksByBlockchain[bc] ?? []);
+        networks.forEach((n) => existing.add(n));
+        networksByBlockchain[bc] = Array.from(existing);
+    }
 }
 
-const utxoNetworks: Record<string, readonly string[]> = {};
-for (const bc of utxoBlockchains) {
-    utxoNetworks[bc] = BLOCKCHAIN_NETWORKS[bc as keyof typeof BLOCKCHAIN_NETWORKS];
-}
-
-/** Event types supported by the blockchain_events_create tool. */
-export const EVENT_TYPES = [
-    "UNCONFIRMED_COINS_TRANSACTION",
-    "CONFIRMED_COINS_TRANSACTION",
-    "UNCONFIRMED_TOKENS_TRANSACTION",
-    "CONFIRMED_TOKENS_TRANSACTION",
-    "NEW_BLOCK",
-    "ADDRESS_COINS_TRANSACTION_CONFIRMED",
-    "ADDRESS_COINS_TRANSACTION_UNCONFIRMED",
-    "ADDRESS_TOKENS_TRANSACTION_CONFIRMED",
-    "ADDRESS_TOKENS_TRANSACTION_UNCONFIRMED",
-] as const;
-
+/**
+ * Union across all 8 event types, for the generic "which blockchains does this
+ * package touch at all" view. The actual set for any single create call is
+ * narrower — see EVENT_TYPE_BLOCKCHAINS/EVENT_TYPE_NETWORKS for the per-event
+ * truth, which the tool handler validates against.
+ */
 export const supportedChains: SupportedChainsResource = {
-    evm: {
-        blockchains: evmBlockchains,
-        networks: evmNetworks,
+    all: {
+        blockchains: allBlockchains,
+        networks: networksByBlockchain,
         actions: {
-            create: [...evmBlockchains],
-            "list-subscriptions": [...evmBlockchains],
-            "get-subscription": [...evmBlockchains],
-            "delete-subscription": [...evmBlockchains],
-            "activate-subscription": [...evmBlockchains],
-        },
-    },
-    utxo: {
-        blockchains: utxoBlockchains,
-        networks: utxoNetworks,
-        actions: {
-            create: [...utxoBlockchains],
-            "list-subscriptions": [...utxoBlockchains],
-            "get-subscription": [...utxoBlockchains],
-            "delete-subscription": [...utxoBlockchains],
-            "activate-subscription": [...utxoBlockchains],
+            create: allBlockchains,
+            "list-subscriptions": allBlockchains,
+            "get-subscription": allBlockchains,
+            "delete-subscription": allBlockchains,
+            "activate-subscription": allBlockchains,
         },
     },
 };

@@ -13,7 +13,7 @@ export function registerPrompts(server: McpServer): void {
                 blockchain: z.string().describe("Blockchain protocol (e.g. bitcoin, ethereum)"),
                 network: z.string().describe("Network name (e.g. mainnet, testnet, sepolia)"),
                 callbackUrl: z.string().describe("Webhook callback URL to receive event notifications"),
-                eventType: z.string().optional().describe("Specific event type to subscribe to (e.g. NEW_BLOCK, CONFIRMED_COINS_TRANSACTION)"),
+                eventType: z.string().optional().describe("Specific event type to subscribe to (e.g. block-mined, address-coins-transactions-confirmed)"),
             },
         },
         (args): GetPromptResult => {
@@ -21,7 +21,7 @@ export function registerPrompts(server: McpServer): void {
 
             const eventClause = eventType
                 ? `The user wants to subscribe to the "${eventType}" event type. Create that specific event subscription using blockchain_events_create.`
-                : `The user has not specified an event type yet. First explain the available event types (e.g., ADDRESS_COINS_TRANSACTION_CONFIRMED for monitoring incoming/outgoing coin transactions at a specific address, CONFIRMED_COINS_TRANSACTION for tracking any confirmed coin transaction, NEW_BLOCK for new block notifications, ADDRESS_TOKENS_TRANSACTION_CONFIRMED for token transfers at an address, CONFIRMED_TOKENS_TRANSACTION for any confirmed token transaction) and help the user choose the right one for their use case.`;
+                : `The user has not specified an event type yet. First explain the available event types (e.g., address-coins-transactions-confirmed for tracking a confirmed coin transaction at a specific address, address-coins-transactions-unconfirmed for the unconfirmed/mempool version, block-mined for new block notifications with no address needed, address-tokens-transactions-confirmed for token transfers at an address, the "-each-confirmation" variants for a callback on every confirmation up to a chosen count) and help the user choose the right one for their use case.`;
 
             return {
                 messages: [

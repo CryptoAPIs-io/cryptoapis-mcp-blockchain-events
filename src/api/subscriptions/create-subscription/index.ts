@@ -1,33 +1,40 @@
 import type { CryptoApisHttpClient, RequestMetadata } from "@cryptoapis-io/mcp-shared";
 
+/** URL path segment for each event type, per the spec's 8 dedicated create-subscription endpoints. */
+export const EVENT_TYPE_PATH_SEGMENT: Record<string, string> = {
+    "address-coins-transactions-unconfirmed": "address-coins-transactions-unconfirmed",
+    "address-coins-transactions-confirmed": "address-coins-transactions-confirmed",
+    "address-coins-transactions-confirmed-each-confirmation": "address-coins-transactions-confirmed-each-confirmation",
+    "address-tokens-transactions-confirmed": "address-tokens-transactions-confirmed",
+    "address-tokens-transactions-confirmed-each-confirmation": "address-tokens-transactions-confirmed-each-confirmation",
+    "address-internal-transactions-confirmed": "address-internal-transactions-confirmed",
+    "address-internal-transactions-confirmed-each-confirmation": "address-internal-transactions-confirmed-each-confirmation",
+    "block-mined": "block-mined",
+};
+
 export type CreateSubscriptionInput = {
     eventType: string;
+    blockchain: string;
+    network: string;
     callbackUrl: string;
     callbackSecretKey?: string;
-    blockchain?: string;
-    network?: string;
     address?: string;
-    transactionId?: string;
-    [key: string]: unknown;
+    allowDuplicates?: boolean;
+    receiveCallbackOn?: number;
+    confirmationsCount?: number;
 } & RequestMetadata;
 
 export async function createSubscription(client: CryptoApisHttpClient, input: CreateSubscriptionInput) {
+    const segment = EVENT_TYPE_PATH_SEGMENT[input.eventType];
     const item: Record<string, unknown> = {
-        eventType: input.eventType,
         callbackUrl: input.callbackUrl,
         callbackSecretKey: input.callbackSecretKey,
-        blockchain: input.blockchain,
-        network: input.network,
         address: input.address,
-        transactionId: input.transactionId,
+        allowDuplicates: input.allowDuplicates,
+        receiveCallbackOn: input.receiveCallbackOn,
+        confirmationsCount: input.confirmationsCount,
     };
-    Object.keys(input).forEach((k) => {
-        if (!["context", "eventType", "callbackUrl", "callbackSecretKey", "blockchain", "network", "address", "transactionId"].includes(k)) {
-            const v = (input as Record<string, unknown>)[k];
-            if (v !== undefined) item[k] = v;
-        }
-    });
-    return client.request<unknown>("POST", "/blockchain-events/subscriptions", {
+    return client.request<unknown>("POST", `/blockchain-events/${input.blockchain}/${input.network}/${segment}`, {
         query: { context: input.context },
         body: { data: { item } },
     });
