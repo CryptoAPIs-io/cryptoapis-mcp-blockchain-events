@@ -1,3 +1,4 @@
+import { DESTRUCTIVE_TOOL } from "@cryptoapis-io/mcp-shared";
 import type { CryptoApisHttpClient, RequestResult, DangerousActionMap, McpLogger } from "@cryptoapis-io/mcp-shared";
 import { requiresConfirmation, buildConfirmationPreview, formatDangerousActionsWarning } from "@cryptoapis-io/mcp-shared";
 import type { McpToolDef } from "../types.js";
@@ -26,6 +27,8 @@ const ACTION_CREDITS: Record<string, number> = {
 
 export const blockchainEventsManageTool: McpToolDef<typeof BlockchainEventsManageToolSchema> = {
     name: "blockchain_events_manage",
+    title: "Manage blockchain event subscriptions",
+    annotations: DESTRUCTIVE_TOOL,
     description: `Manage existing webhook subscriptions for on-chain events. Use this to view, delete, or re-activate event subscriptions created via blockchain_events_create.
 
 Actions:

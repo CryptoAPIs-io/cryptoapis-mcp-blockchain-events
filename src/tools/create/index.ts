@@ -1,3 +1,4 @@
+import { WRITE_TOOL } from "@cryptoapis-io/mcp-shared";
 import type { CryptoApisHttpClient, RequestResult, DangerousActionMap, McpLogger } from "@cryptoapis-io/mcp-shared";
 import { requiresConfirmation, buildConfirmationPreview, formatDangerousActionsWarning } from "@cryptoapis-io/mcp-shared";
 import type { McpToolDef } from "../types.js";
@@ -21,6 +22,8 @@ const DANGEROUS_ACTIONS: DangerousActionMap = {
 
 export const blockchainEventsCreateTool: McpToolDef<typeof BlockchainEventsCreateToolSchema> = {
     name: "blockchain_events_create",
+    title: "Create blockchain event subscription",
+    annotations: WRITE_TOOL,
     description: `Create a webhook subscription for on-chain events. When the specified event occurs, CryptoAPIs sends a POST request to your callbackUrl with the event data. Subscriptions persist until deleted.
 
 Event types (supported blockchains vary per type — an invalid blockchain for the chosen eventType is rejected before calling the API):
